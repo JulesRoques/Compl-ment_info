@@ -1,8 +1,7 @@
-import os
-import secrets
-
 from fastapi import HTTPException
 
+from business_object.game_mode.game_mode_factory import GameModeFactory
+from business_object.scoring_strategy import ScoringStrategy
 from dao.player_dao import PlayerDao
 from utils.log_utils import log
 
@@ -11,14 +10,15 @@ class GameService:
     """Service that manages games."""
 
     @log
-    def play(self, id_player: int, id_opponent: int, choice="heads"):
-        """Executes a single round of a coin-flip game between two players.
+    def play(self, id_player: int, id_opponent: int, game_mode: str, **kwargs):
+        """Executes a single game between two players.
         Args:
             id_player (int): The unique identifier of the first player.
             id_opponent (int): The unique identifier of the opponent.
-            choice (str, optional): The player's choice ('heads' or 'tails'). Defaults to "heads".
+            game_mode (str): The type of game to play ('coinflip' or 'dice').
+            **kwargs: Additional parameters required by the game mode.
         Returns:
-            dict: A dictionary containing the match details and new elo
+            Game: The played game, including its winner and description.
         Raises:
             HTTPException: 400 if the two players are the same.
             HTTPException: 404 if one or both players are not found in the database.
@@ -32,21 +32,12 @@ class GameService:
         if not p1 or not p2:
             raise HTTPException(status_code=404, detail="Player not found")
 
-        result = secrets.choice(["heads", "tails"])
-        winner = p1 if result == choice else p2
+        mode = GameModeFactory.get_mode(game_mode)
+        game = mode.play(p1, p2, **kwargs)
 
-        self.update_player_ratings(p1, p2, winner)
+        ScoringStrategy.update_player_ratings(game)
 
         PlayerDao().update(p1)
         PlayerDao().update(p2)
 
-        return {
-            "player1": p1.username,
-            "player2": p2.username,
-            "description": result,
-            "winner": winner.username,
-            "new_elo1": p1.elo,
-            "new_elo2": p2.elo,
-        }
-    
-  
+        return game
