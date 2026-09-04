@@ -1,11 +1,17 @@
-from business_object.game import Game
+from business_object.game_mode.dice_mode import DiceMode
+from business_object.game_mode.coin_flip_mode import CoinFlipMode
 from business_object.player import Player
 
 p1 = Player(username="Jacky", elo=1500, email="jacky@ensai.fr")
 p2 = Player(username="Jackie", elo=1500, email="jackie@ensai.fr")
 
-game = Game(player1=p1, player2=p2, game_mode="coinflip", winner=p2)
-print(game)
+dice = DiceMode()
+coin = CoinFlipMode()
 
-nul = Game(player1=p1, player2=p2, game_mode="dice")
-print(nul)
+for _ in range(10):
+    print(dice.play(p1, p2))
+
+print("---")
+
+for _ in range(10):
+    print(coin.play(p1, p2, choice="heads"))
