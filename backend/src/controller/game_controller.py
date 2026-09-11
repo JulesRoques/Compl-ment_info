@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from schema.game_model import GamePlayModel, GameResponse
+from schema.game_model import GamePlayModel, GameReadModel, GameResponse
 from service.game_service import GameService
 from utils.log_utils import get_logger
 from utils.security import verify_token
@@ -41,3 +41,20 @@ def play_game(
         new_elo1=game.player1.elo,
         new_elo2=game.player2.elo,
     )
+
+@router.get("/", response_model=list[GameReadModel], tags=["Games"])
+def get_games_by_player(
+    id_player: int,
+    game_mode: str = None,
+    game_service=Depends(get_game_service),
+):
+    """Returns the games played by a given player.
+    Args:
+        id_player (int): The player whose games are requested.
+        game_mode (str, optional): Filter on a specific game mode.
+        game_service (GameService): Service handling game logic.
+    Returns:
+        list[Game]: The games played by this player.
+    """
+    logger.info("Get games by player")
+    return game_service.find_all_by_player(id_player, game_mode)
